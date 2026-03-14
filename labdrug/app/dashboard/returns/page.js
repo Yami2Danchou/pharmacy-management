@@ -12,6 +12,7 @@ export default function ReturnsPage() {
   const [items, setItems] = useState([{ product_id: '', quantity: 1 }])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(null)
 
   useEffect(() => { loadAll() }, [])
 
@@ -36,8 +37,7 @@ export default function ReturnsPage() {
     if (!form.reason || !form.verified_by_employee_id) { setError('Reason and verifying employee are required.'); return }
     const valid = items.filter(i => i.product_id && i.quantity > 0)
     if (!valid.length) { setError('Add at least one item.'); return }
-    setSubmitting(true)
-    setError('')
+    setSubmitting(true); setError('')
     const res = await fetch('/api/returns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -52,8 +52,15 @@ export default function ReturnsPage() {
     setSubmitting(false)
   }
 
+  async function handleDelete() {
+    const res = await fetch(`/api/returns/${confirmDelete.return_product_id}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (!res.ok) { alert(data.error || 'Delete failed.'); setConfirmDelete(null); return }
+    setConfirmDelete(null); loadAll()
+  }
+
   const columns = [
-    { key: 'return_product_id', label: '#', render: r => `#${r.return_product_id}` },
+    { key: 'return_product_id', label: '#', render: r => <span className="font-medium">#{r.return_product_id}</span> },
     { key: 'return_date', label: 'Date', render: r => new Date(r.return_date).toLocaleDateString('en-PH') },
     { key: 'return_type', label: 'Type', render: r => <span className={`badge ${r.return_type === 'Resellable' ? 'badge-success' : 'badge-warning'}`}>{r.return_type}</span> },
     { key: 'customer_name', label: 'Customer', render: r => r.customer_name || '—' },
@@ -65,16 +72,18 @@ export default function ReturnsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Product Returns</h2>
-          <p className="text-sm text-muted">Process and track product returns</p>
-        </div>
-        <button className="btn btn-primary" onClick={() => setModal(true)}>+ New Return</button>
+        <div><h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Product Returns</h2><p className="text-sm text-muted">Process and track product returns</p></div>
+        <button className="btn btn-primary" onClick={() => { setError(''); setModal(true) }}>+ New Return</button>
       </div>
 
       <div className="card">
-        {loading ? <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--gray-400)' }}>Loading...</div>
-          : <DataTable columns={columns} data={returns} searchKeys={['customer_name', 'reason', 'return_type']} />}
+        {loading ? <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--gray-400)' }}>Loading...</div> : (
+          <DataTable columns={columns} data={returns} searchKeys={['customer_name', 'reason', 'return_type']}
+            actions={row => (
+              <button className="btn btn-sm" style={{ background: 'var(--danger-light)', color: 'var(--danger)', border: '1px solid #fca5a5' }} onClick={() => setConfirmDelete(row)}>Delete</button>
+            )}
+          />
+        )}
       </div>
 
       {modal && (
@@ -106,14 +115,8 @@ export default function ReturnsPage() {
                 </div>
               </div>
               <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Customer Name</label>
-                  <input value={form.customer_name} onChange={e => setForm({ ...form, customer_name: e.target.value })} placeholder="Customer name" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Sale # (if applicable)</label>
-                  <input type="number" value={form.sale_id} onChange={e => setForm({ ...form, sale_id: e.target.value })} placeholder="e.g. 42" />
-                </div>
+                <div className="form-group"><label className="form-label">Customer Name</label><input value={form.customer_name} onChange={e => setForm({ ...form, customer_name: e.target.value })} placeholder="Customer name" /></div>
+                <div className="form-group"><label className="form-label">Sale # (if applicable)</label><input type="number" value={form.sale_id} onChange={e => setForm({ ...form, sale_id: e.target.value })} placeholder="e.g. 42" /></div>
               </div>
               <div className="form-group">
                 <label className="form-label">Reason *</label>
@@ -142,6 +145,19 @@ export default function ReturnsPage() {
             <div className="modal-footer">
               <button className="btn btn-outline" onClick={() => setModal(false)}>Cancel</button>
               <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting}>{submitting ? 'Saving...' : 'Submit Return'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setConfirmDelete(null)}>
+          <div className="modal" style={{ maxWidth: 420 }}>
+            <div className="modal-header"><span className="modal-title">Confirm Delete</span></div>
+            <div className="modal-body"><p>Delete return record <strong>#{confirmDelete.return_product_id}</strong>? This cannot be undone.</p></div>
+            <div className="modal-footer">
+              <button className="btn btn-outline" onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button className="btn btn-danger" onClick={handleDelete}>Delete</button>
             </div>
           </div>
         </div>

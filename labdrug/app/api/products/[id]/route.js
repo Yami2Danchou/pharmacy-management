@@ -32,15 +32,10 @@ export async function PUT(request, { params }) {
     const { product_name, unit, price, category_id, description, brand_id, reorder_level } = await request.json()
     const result = await sql`
       UPDATE product SET
-        product_name = ${product_name},
-        unit = ${unit},
-        price = ${price},
-        category_id = ${category_id},
-        description = ${description},
-        brand_id = ${brand_id},
-        reorder_level = ${reorder_level}
-      WHERE product_id = ${id}
-      RETURNING *
+        product_name = ${product_name}, unit = ${unit}, price = ${price},
+        category_id = ${category_id}, description = ${description},
+        brand_id = ${brand_id}, reorder_level = ${reorder_level}
+      WHERE product_id = ${id} RETURNING *
     `
     return NextResponse.json(result[0])
   } catch (err) {
@@ -53,6 +48,7 @@ export async function DELETE(request, { params }) {
   if (!session || session.role !== 'Admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
   try {
+    await sql`DELETE FROM product_expirationdate WHERE product_id = ${id}`
     await sql`DELETE FROM product WHERE product_id = ${id}`
     return NextResponse.json({ success: true })
   } catch (err) {
