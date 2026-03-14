@@ -5,11 +5,9 @@ import { getSession } from '@/lib/auth'
 export async function GET(request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search') || ''
   const categoryId = searchParams.get('category')
-
   try {
     let products
     if (categoryId) {
@@ -47,7 +45,6 @@ export async function GET(request) {
 export async function POST(request) {
   const session = await getSession()
   if (!session || session.role === 'Cashier') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   try {
     const { product_name, unit, price, category_id, description, brand_id, reorder_level } = await request.json()
     const result = await sql`

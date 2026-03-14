@@ -11,8 +11,7 @@ export async function GET(request) {
     const rows = await sql`
       SELECT * FROM customer
       WHERE customer_name ILIKE ${'%' + search + '%'}
-      ORDER BY customer_name
-      LIMIT 50
+      ORDER BY customer_name LIMIT 100
     `
     return NextResponse.json(rows)
   } catch (err) {

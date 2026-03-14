@@ -5,10 +5,8 @@ import { getSession } from '@/lib/auth'
 export async function GET(request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const { searchParams } = new URL(request.url)
   const days = parseInt(searchParams.get('days') || '90')
-
   try {
     const expiring = await sql`
       SELECT p.product_id, p.product_name, p.unit,

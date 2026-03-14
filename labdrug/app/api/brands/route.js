@@ -18,9 +18,7 @@ export async function POST(request) {
   if (!session || session.role === 'Cashier') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const { brand_name, description } = await request.json()
-    const result = await sql`
-      INSERT INTO brand (brand_name, description) VALUES (${brand_name}, ${description}) RETURNING *
-    `
+    const result = await sql`INSERT INTO brand (brand_name, description) VALUES (${brand_name}, ${description}) RETURNING *`
     return NextResponse.json(result[0], { status: 201 })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })

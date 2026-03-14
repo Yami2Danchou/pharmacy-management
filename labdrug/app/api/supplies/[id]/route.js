@@ -23,7 +23,7 @@ export async function GET(request, { params }) {
         WHERE sd.supply_id = ${id}
       `
     ])
-    if (!supply.length) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    if (!supply.length) return NextResponse.json({ error: 'Supply record not found' }, { status: 404 })
     return NextResponse.json({ ...supply[0], items })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
@@ -36,9 +36,10 @@ export async function DELETE(request, { params }) {
   const { id } = await params
   try {
     await sql`DELETE FROM supply_details WHERE supply_id = ${id}`
-    await sql`DELETE FROM supply WHERE supply_id = ${id}`
+    const result = await sql`DELETE FROM supply WHERE supply_id = ${id} RETURNING supply_id`
+    if (!result.length) return NextResponse.json({ error: 'Supply record not found' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ error: `Delete failed: ${err.message}` }, { status: 500 })
   }
 }

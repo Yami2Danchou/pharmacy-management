@@ -6,7 +6,6 @@ export async function GET(request, { params }) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
-
   try {
     const [sale, items] = await Promise.all([
       sql`
@@ -24,9 +23,7 @@ export async function GET(request, { params }) {
         WHERE sd.sale_id = ${id}
       `
     ])
-
     if (!sale.length) return NextResponse.json({ error: 'Sale not found' }, { status: 404 })
-
     return NextResponse.json({ ...sale[0], items })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })

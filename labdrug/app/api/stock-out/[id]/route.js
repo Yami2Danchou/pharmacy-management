@@ -8,9 +8,10 @@ export async function DELETE(request, { params }) {
   const { id } = await params
   try {
     await sql`DELETE FROM stock_out_details WHERE stock_out_id = ${id}`
-    await sql`DELETE FROM stock_out WHERE stock_out_id = ${id}`
+    const result = await sql`DELETE FROM stock_out WHERE stock_out_id = ${id} RETURNING stock_out_id`
+    if (!result.length) return NextResponse.json({ error: 'Stock-out record not found' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ error: `Delete failed: ${err.message}` }, { status: 500 })
   }
 }
